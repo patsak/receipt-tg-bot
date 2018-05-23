@@ -1,0 +1,9 @@
+python-telegram-bot==10.1.0
+requests==2.18.4
+requests_oauthlib
+flask
+redis
+pyopenssl
+gspread
+oauth2client
+uwsgi

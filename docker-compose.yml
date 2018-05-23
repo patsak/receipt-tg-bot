@@ -1,0 +1,50 @@
+---
+version: "3.4"
+
+services:
+  redis:
+    image: redis
+    command: redis-server --appendonly yes
+    ports:
+      - 6379:6379
+    volumes:
+      - tg-receipt-bot-redis-volume:/data
+  nginx:
+    image: nginx:alpine
+    ports:
+      - 443:443
+    env_file:
+      - nginx.env
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/nginx.template
+      - ${CERTS_PATH}:/etc/certs
+    command: /bin/sh -c "envsubst < /etc/nginx/nginx.template > /etc/nginx/conf.d/site.conf && cat /etc/nginx/conf.d/site.conf && nginx -g 'daemon off;'"
+    depends_on:
+      - web-auth
+  bot:
+    build: .
+    command: python bot.py
+    environment:
+      - REDIS_HOST=redis      
+    env_file:
+      - bot.env
+    depends_on:
+      - redis      
+  web-auth:
+    build: .
+    ports:
+      - 8000:8000
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      
+    env_file:
+      - web-auth.env
+    command: uwsgi --chmod-socket=660 --master  --processes=2 --socket :8000 --die-on-term  --uid uwsgi --gid uwsgi --mount /web-auth=/app/web.py --callable app
+
+
+volumes:
+  tg-receipt-bot-redis-volume:
+    external: true
+  

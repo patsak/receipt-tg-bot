@@ -1,0 +1,31 @@
+upstream web-auth {
+    # server unix:///path/to/your/mysite/mysite.sock; # взаимодействие с uwsgi через Unix-сокет (мы воспользуемся этим вариантом позже) 
+    server web-auth:8000; # взаимодействие с uwsgi через веб-порт 
+}
+upstream bot {
+    server bot:8000;
+}
+server {
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/certs/${NGINX_HOST}/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/certs/${NGINX_HOST}/privkey.pem; # managed by Certbot
+    include /etc/certs/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/certs/ssl-dhparams.pem; # managed by Certbot
+
+	
+    server_name $NGINX_HOST; # managed by Certbot
+
+
+    location = /auth {
+        include uwsgi_params;
+        uwsgi_pass  web-auth;
+    }
+
+
+    location /${TOKEN} {
+       proxy_pass http://bot/;
+    }
+
+}

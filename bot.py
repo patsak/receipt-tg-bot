@@ -51,7 +51,8 @@ def is_logged_in(bot, update):
 
 
 def start_processing(bot, update):
-    update.message.reply_text('Введите текст из баркода с чека')
+    update.message.reply_text('Введите текст из баркода с чека',
+                              reply_markup=ReplyKeyboardMarkup([['/cancel']]))
     return BARCODE
 
 
@@ -65,7 +66,7 @@ def repeat(bot, update, user_data):
     user_data['repeat'] = update.message.text == 'да'
     update.message.text = user_data['receipt']
     update.message.reply_text(
-        'Хорошо, запишем еще раз', reply_markup=ReplyKeyboardRemove())
+        'Хорошо, запишем еще раз', reply_markup=ReplyKeyboardMarkup([['/cancel']]))
     return receipt_info(bot, update, user_data)
 
 
@@ -79,7 +80,7 @@ def receipt_info(bot, update, user_data):
     try:
         rec = receipt.get_receipt(update.message.text)
         if db.is_receipt_processed(rec.key) and 'repeat' not in user_data:
-            reply_keyboard = [['да', 'нет']]
+            reply_keyboard = [['да', 'нет'], ['/cancel']]
 
             update.message.reply_text(
                 'Этот чек уже обрабатывался. Записать его еще раз?',
@@ -128,6 +129,8 @@ def receipt_info(bot, update, user_data):
 
 
 def cancel(bot, update, user_data):
+    update.message.reply_text(
+        'Больше не жду данных с чека. Если потребуется ввести новые данные нажмите /send_receipt', reply_markup=ReplyKeyboardRemove())
     user_data.clear()
     return ConversationHandler.END
 
@@ -139,7 +142,7 @@ def main():
     updater = Updater(token)
 
     dp = updater.dispatcher
-  #  dp.add_handler(MessageHandler(Filters.text, receipt_info))
+
     dp.add_handler(ConversationHandler(
 
         entry_points=[CommandHandler('send_receipt', start_processing)],
@@ -148,6 +151,7 @@ def main():
             REPEAT: [RegexHandler('^(да|нет)$', repeat, pass_user_data=True)],
         },
         fallbacks=[CommandHandler('cancel', cancel, pass_user_data=True)]))
+
     dp.add_handler(CommandHandler("sign_in", login))
     dp.add_handler(CommandHandler("is_logged_in", is_logged_in))
 

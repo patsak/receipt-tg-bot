@@ -147,3 +147,16 @@ def fetch_details(receipt):
             "nalog.ru service unavailable. Please repeat later.")
 
     return False, res.text
+
+
+if __name__ == '__main__':
+    print("Введите электронную почту для регистрации на сервисе проверки чеков:")
+    email = input()
+    print("Введите номер телефона для регистрации на сервисе проверки чеков. В ответ придет SMS с паролем:")
+    phone = input()
+
+    status, body = register(email, phone)
+    if status:
+        print("Регистрация прошла успешно")
+    else:
+        print("Ошибка при регистрации: %s" % (str(body)))

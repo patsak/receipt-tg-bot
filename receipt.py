@@ -54,23 +54,25 @@ def get_receipt(qrcodedata):
     return rec
 
 
-def fetch_and_build_details(rec):
+def fetch_and_build_details(receipt):
 
-    res, body = fetch_details(rec)
-    if res:
-        body = body['document']['receipt']
-        res = []
-        response = {}
-        response['shop'] = body.get('user', None)
-        response['shop_inn'] = body.get('userInn', None)
-        response['total_cash'] = float(body.get('cashTotalSum', None))/100
-        response['total_ecash'] = float(body.get('ecashTotalSum', None))/100
-        response['datetime'] = body.get('dateTime', None)
-        response['fn'] = rec.fn
-        response['fpd'] = rec.fpd
-        response['fd'] = rec.fd
+    exists, body = fetch_details(receipt)
+    if exists:
+        raw_body = raw_body['document']['receipt']
+        entries = []
+        common_info = {}
+        common_info['shop'] = raw_body.get('user', None)
+        common_info['shop_inn'] = raw_body.get('userInn', None)
+        common_info['total_cash'] = float(
+            raw_body.get('cashTotalSum', None))/100
+        common_info['total_ecash'] = float(
+            raw_body.get('ecashTotalSum', None))/100
+        common_info['datetime'] = raw_body.get('dateTime', None)
+        common_info['fn'] = receipt.fn
+        common_info['fpd'] = receipt.fpd
+        common_info['fd'] = receipt.fd
 
-        for index, item_raw in enumerate(body['items']):
+        for index, item_raw in enumerate(raw_body['items']):
 
             item = {}
             for k in _actual_item_keys:
@@ -79,13 +81,13 @@ def fetch_and_build_details(rec):
             item['price'] = float(item['price'])/100
             item['sum'] = float(item['sum'])/100
 
-            entry = {**item, **response}
-            id_ = rec.key+"_"+str(index)
+            entry = {**item, **common_info}
+            id_ = receipt.key+"_"+str(index)
             id_ = hashlib.md5(id_.encode('utf8')).hexdigest()[0:8]
             entry['id'] = id_
-            res.append(entry)
-        rec.entries = res
-        return True, rec
+            entries.append(entry)
+        receipt.entries = entries
+        return True, receipt
     else:
         return False, None
 

@@ -106,14 +106,18 @@ def receipt_info(bot, update, user_data):
             url = google_api.append_rows(chat_id, rows, receipt.header)
             db.mark_receipt_as_processed(rec.key)
             update.message.reply_text(
-                "Чек с %d записями был записан в документ %s. Ссылка - %s" % (len(rows), google_api.SPREADSHEET_NAME, url), quote=True)
+                "Чек с %d записями был записан в документ %s. Ссылка - %s" % (
+                    len(rows), google_api.SPREADSHEET_NAME, url),
+                quote=True)
 
         else:
             update.message.reply_text(
-                "Такого чека не существует. Возможно он был распечатан больше месяца назад или он еще не дошел до налоговой.", quote=True)
+                "Такого чека не существует. Возможно он был распечатан больше месяца назад или он еще не дошел до налоговой.",
+                quote=True)
 
     except receipt.QueryException as qe:
         update.message.reply_text(str(qe), quote=True)
+        update.message.reply_text("Повторите ввода текста")
         return BARCODE
     except (TimeoutError, ConnectionError) as ec:
         update.message.reply_text(
@@ -124,7 +128,11 @@ def receipt_info(bot, update, user_data):
         update.message.reply_text(
             "Упс! У меня какие то проблемы. Обратитесь к разработчику на гитхабе - https://github.com/patsak/tg-receipt-bot")
         traceback.print_exc(file=sys.stdout)
-    user_data.clear()
+    finally:
+        user_data.clear()
+
+    update.message.reply_text(
+        "Обработка чека закончена. Введите /send_receipt, чтобы добавить новый.", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 

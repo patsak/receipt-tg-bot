@@ -131,17 +131,17 @@ def fetch_details(receipt):
     res = _session.get("%s/inns/*/kkts/*/fss/%s/tickets/%s" %
                        (_base_url, receipt.fn, receipt.fd), params=params)
     if res.status_code == 202:
+        # repeat request
         res = _session.get("%s/inns/*/kkts/*/fss/%s/tickets/%s" %
                            (_base_url, receipt.fn, receipt.fd), params=params)
-        if res.ok:
+        if res.status_code == 200:
             db.save_receipt(receipt.key, json.dumps(
                 res.json(), indent=None, ensure_ascii=False))
-        return True, res.json() if res.ok else res.text
+        return res.status_code == 200, res.json() if res.ok else res.text
     if res.status_code == 200:
         logger.debug("Save receipt with key %s" % (receipt.key))
-        if res.ok:
-            db.save_receipt(receipt.key, json.dumps(
-                res.json(), indent=None, ensure_ascii=False))
+        db.save_receipt(receipt.key, json.dumps(
+            res.json(), indent=None, ensure_ascii=False))
         return True, res.json()
     if res.status_code >= 500:
         logger.error("Receipt service error %s" % (str(res.text)))
